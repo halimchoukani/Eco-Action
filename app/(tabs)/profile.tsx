@@ -1,17 +1,27 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { account } from '../../lib/appwrite';
 import { useRouter } from 'expo-router';
+import { logout } from '../../lib/api/users';
+import { useToastController } from 'tamagui';
 
 export default function ProfileScreen() {
     const router = useRouter();
+    const toast = useToastController()
 
     const handleLogout = async () => {
         try {
-            await account.deleteSession('current');
+            await logout();
+            toast.show('Logout Successful', {
+                message: 'You can now login',
+                type: 'success',
+            })
             router.replace('/auth/login');
         } catch (error) {
             console.log(error);
+            toast.show('Logout Failed', {
+                message: 'Please try again',
+                type: 'error',
+            })
         }
     };
 

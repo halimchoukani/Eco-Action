@@ -23,6 +23,7 @@
     "@tamagui/core": "^2.0.0-rc.11",
     "@tamagui/portal": "^2.0.0-rc.11",
     "@tamagui/toast": "^2.0.0-rc.11",
+    "@tanstack/react-query": "^5.50.1",
     "appwrite": "^21.2.1",
     "expo": "~54.0.32",
     "expo-constants": "~18.0.13",

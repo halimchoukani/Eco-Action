@@ -15,22 +15,22 @@ import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { login, getCurrentUser } from '../../lib/api/users';
 import { useToastController } from 'tamagui';
+import { useQuery } from '@tanstack/react-query';
 
 export default function LoginScreen() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const toast = useToastController()
-
+    const { data: user, isLoading } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: getCurrentUser,
+    })
     useEffect(() => {
-        const checkUser = async () => {
-            const user = await getCurrentUser();
-            if (user) {
-                router.replace('/(tabs)/home');
-            }
-        };
-        checkUser();
-    }, []);
+        if (user) {
+            router.replace('/(tabs)/home');
+        }
+    }, [user]);
 
     const handleLogin = async () => {
         const res = await login(email, password);

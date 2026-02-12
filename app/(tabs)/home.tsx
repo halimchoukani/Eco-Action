@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
     View,
     Text,
@@ -10,22 +10,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { getCurrentUser } from '../../lib/api/users';
+
+import StatsCard from '../../components/StatsCard';
 
 const { width } = Dimensions.get('window');
 
 export default function Home() {
-    const [userName, setUserName] = useState('Alex');
+    const { data: user, isLoading } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: getCurrentUser,
+    });
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            const user = await getCurrentUser();
-            if (user && user.name) {
-                setUserName(user.name.split(' ')[0]);
-            }
-        };
-        fetchUser();
-    }, []);
+    const userName = user?.name?.split(' ')[0] || 'Member';
 
     return (
         <SafeAreaView style={styles.container}>
@@ -46,20 +44,21 @@ export default function Home() {
 
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
-                    <View style={[styles.statCard, { backgroundColor: '#064E3B' }]}>
-                        <View style={styles.statHeader}>
-                            <Text style={[styles.statLabel, { color: '#86EFAC' }]}>Impact Score</Text>
-                            <MaterialCommunityIcons name="flash" size={24} color="#fff" />
-                        </View>
-                        <Text style={[styles.statValue, { color: '#fff' }]}>4,850</Text>
-                    </View>
-                    <View style={[styles.statCard, { backgroundColor: '#fff' }]}>
-                        <View style={styles.statHeader}>
-                            <Text style={[styles.statLabel, { color: '#6B7280' }]}>Hours Volunteered</Text>
-                            <MaterialCommunityIcons name="clock-outline" size={24} color="#3B82F6" />
-                        </View>
-                        <Text style={[styles.statValue, { color: '#111827' }]}>156 h</Text>
-                    </View>
+                    <StatsCard
+                        title="Impact Score"
+                        value={user?.impactScore?.toLocaleString() || "0"}
+                        icon="flash"
+                        color="#86EFAC"
+                        backgroundColor="#064E3B"
+                    />
+                    <StatsCard
+                        title="Hours Volunteered"
+                        value={`${user?.hoursVolunteered || 0} h`}
+                        icon="clock-outline"
+                        color="#6B7280"
+                        backgroundColor="#fff"
+                        iconColor="#3B82F6"
+                    />
                 </View>
 
                 {/* Your Next Mission */}
@@ -242,32 +241,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 30,
-    },
-    statCard: {
-        width: (width - 60) / 2,
-        padding: 16,
-        borderRadius: 20,
-        height: 110,
-        justifyContent: 'space-between',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    statHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-    },
-    statLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        width: '70%',
-    },
-    statValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
     },
     sectionHeader: {
         flexDirection: 'row',

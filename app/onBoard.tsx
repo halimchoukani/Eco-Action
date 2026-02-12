@@ -14,6 +14,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { getCurrentUser } from '../lib/api/users';
+import { useQuery } from '@tanstack/react-query';
 
 const { width, height } = Dimensions.get('window');
 
@@ -88,15 +89,15 @@ export default function OnBoardScreen() {
     const slidesRef = useRef<FlatList>(null);
     const router = useRouter();
 
+    const { data: user, isLoading } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: getCurrentUser,
+    });
     useEffect(() => {
-        const checkUser = async () => {
-            const user = await getCurrentUser();
-            if (user) {
-                router.replace('/(tabs)/home');
-            }
-        };
-        checkUser();
-    }, []);
+        if (user) {
+            router.replace('/(tabs)/home');
+        }
+    }, [user]);
 
     const viewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems[0]) {
