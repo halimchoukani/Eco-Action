@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -13,12 +13,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { register } from '../../lib/api/users';
+import { register, getCurrentUser } from '../../lib/api/users';
 import { useToastController } from '@tamagui/toast';
 
 export default function RegisterScreen() {
     const router = useRouter();
     const toast = useToastController()
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const user = await getCurrentUser();
+            if (user) {
+                router.replace('/(tabs)/home');
+            }
+        };
+        checkUser();
+    }, []);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

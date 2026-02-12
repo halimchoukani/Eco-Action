@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -13,10 +13,41 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { CurrentToast } from '../../components/CurrentToast';
+import { login, getCurrentUser } from '../../lib/api/users';
+import { useToastController } from 'tamagui';
 
 export default function LoginScreen() {
     const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const toast = useToastController()
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const user = await getCurrentUser();
+            if (user) {
+                router.replace('/(tabs)/home');
+            }
+        };
+        checkUser();
+    }, []);
+
+    const handleLogin = async () => {
+        const res = await login(email, password);
+        if (res) {
+            toast.show('Login Successful', {
+                message: 'Welcome back',
+                type: 'success',
+            })
+            router.replace('/(tabs)/home');
+        } else {
+            toast.show('Login Failed', {
+                message: 'Invalid credentials',
+                type: 'error',
+            })
+        }
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style="dark" />
@@ -41,6 +72,8 @@ export default function LoginScreen() {
                             <View style={styles.inputWrapper}>
                                 <MaterialCommunityIcons name="email-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                                 <TextInput
+                                    value={email}
+                                    onChangeText={setEmail}
                                     style={styles.input}
                                     placeholder="alex@example.com"
                                     placeholderTextColor="#9CA3AF"
@@ -55,6 +88,8 @@ export default function LoginScreen() {
                             <View style={styles.inputWrapper}>
                                 <MaterialCommunityIcons name="lock-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
                                 <TextInput
+                                    value={password}
+                                    onChangeText={setPassword}
                                     style={styles.input}
                                     placeholder="********"
                                     placeholderTextColor="#9CA3AF"
@@ -69,7 +104,7 @@ export default function LoginScreen() {
 
                         <TouchableOpacity
                             style={styles.loginButton}
-                            onPress={() => router.replace('/')} // Navigate to Home or Dash
+                            onPress={handleLogin}
                         >
                             <Text style={styles.loginButtonText}>Log In </Text>
                             <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />

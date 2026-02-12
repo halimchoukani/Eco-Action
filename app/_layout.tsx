@@ -21,6 +21,7 @@ export default function RootLayout() {
                         <StatusBar style="auto" />
                         <Stack
                             screenOptions={{
+                                headerShown: false,
                                 headerStyle: {
                                     backgroundColor: '#10b981',
                                 },
@@ -32,19 +33,16 @@ export default function RootLayout() {
                         >
                             <Stack.Screen
                                 name="index"
-                                options={{ title: 'EcoAction', headerShown: false }}
+                                options={{ title: 'EcoAction' }}
                             />
                             <Stack.Screen
                                 name="onBoard"
-                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="auth/login"
-                                options={{ headerShown: false }}
                             />
                             <Stack.Screen
                                 name="auth/register"
-                                options={{ headerShown: false }}
                             />
                         </Stack>
                         <ToastViewport top={50} left={20} right={20} />

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { getCurrentUser } from '../lib/api/users';
 
 const { width, height } = Dimensions.get('window');
 
@@ -86,6 +87,16 @@ export default function OnBoardScreen() {
     const scrollX = useRef(new Animated.Value(0)).current;
     const slidesRef = useRef<FlatList>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const user = await getCurrentUser();
+            if (user) {
+                router.replace('/(tabs)/home');
+            }
+        };
+        checkUser();
+    }, []);
 
     const viewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
         if (viewableItems[0]) {
