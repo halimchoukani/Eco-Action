@@ -13,14 +13,15 @@ export default function HomeScreen() {
     });
 
     useEffect(() => {
-        if (animationFinished && user !== null) {
+        if (animationFinished && !isLoading) {
             if (user) {
                 router.replace('/(tabs)/home');
             } else {
+                console.log("User not found in appwrite");
                 router.replace('/onBoard');
             }
         }
-    }, [animationFinished, user]);
+    }, [animationFinished, user, isLoading]);
 
     return (
         <VisualSplashScreen onFinish={() => setAnimationFinished(true)} />

@@ -5,6 +5,5 @@ export interface Mission {
     name: string;
     type: string;
     description: string;
-    impactScore: number;
-    hoursVolunteered: number;
+    
 }

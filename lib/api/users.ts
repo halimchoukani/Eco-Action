@@ -48,18 +48,25 @@ export const register = async (name: string, email: string, password: string) =>
 
 export const getCurrentUser = async () => {
     try {
+        console.log("Getting the current user ....");
+
         const user = await account.get();
         if (!user) {
+            console.log("User not found in appwrite");
             return null;
         }
+        console.log("User found in appwrite", user);
         const userData = await databases.getDocument(
             process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
             "user",
             user.$id
         )
+        console.log("User data", userData);
         return userData;
-    } catch (error) {
-        console.log(error)
+    } catch (error: any) {
+        if (error?.code !== 401) {
+            console.log("Error in getCurrentUser:", error);
+        }
         return null;
     }
 }

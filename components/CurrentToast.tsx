@@ -16,9 +16,9 @@ export const CurrentToast = () => {
             opacity={1}
             scale={1}
             transition="quick"
-            bg={'transparent'}
-            paddingInline={"$0"}
-            paddingBlock={"$0"}
+            backgroundColor="transparent"
+            paddingInline="$0"
+            paddingBlock="$0"
         >
             <YStack
                 style={{
@@ -33,7 +33,7 @@ export const CurrentToast = () => {
                     elevation: 5,
                 }}
             >
-                <XStack gap="$4" items="center" justify="space-between">
+                <XStack gap="$4" alignItems="center" justifyContent="space-between">
                     <YStack gap="$1" flex={1}>
                         <Toast.Title color="white" fontWeight="700">
                             {currentToast.title}
@@ -47,7 +47,7 @@ export const CurrentToast = () => {
                     <Toast.Action asChild altText="Dismiss toast">
                         <Button
                             size="$2"
-                            bg="#112c20ff"
+                            backgroundColor="#112c20ff"
                             borderWidth={0}
                         >
                             <Toast.Description color="white">Dismiss</Toast.Description>

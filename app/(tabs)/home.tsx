@@ -22,7 +22,6 @@ export default function Home() {
         queryKey: ['currentUser'],
         queryFn: getCurrentUser,
     });
-
     const userName = user?.name?.split(' ')[0] || 'Member';
 
     return (
