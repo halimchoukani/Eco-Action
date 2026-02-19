@@ -6,16 +6,18 @@ import {
     ScrollView,
     TouchableOpacity,
     Dimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMissionById } from '../../lib/api/mission';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMissionById, updateMissionSpots } from '../../lib/api/mission';
 import { getCategoryById } from '../../lib/api/category';
 import { getUserById, getCurrentUser } from '../../lib/api/users';
-import { createParticipation, isParticipated } from '../../lib/api/participation';
+import { createParticipation, isParticipated, cancelParticipation } from '../../lib/api/participation';
+import { useToastController } from 'tamagui';
 
 const { width } = Dimensions.get('window');
 
@@ -23,50 +25,143 @@ export default function MissionDetail() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const queryClient = useQueryClient();
+    const toast = useToastController();
 
-    const { data: currentUser } = useSuspenseQuery({
+    // Queries
+    const { data: currentUser, isLoading: userLoading } = useQuery({
         queryKey: ['currentUser'],
         queryFn: getCurrentUser,
     });
 
-    const { data: mission } = useSuspenseQuery({
+    const { data: mission, isLoading: missionLoading } = useQuery({
         queryKey: ['mission', id],
         queryFn: () => getMissionById(id!),
+        enabled: !!id,
     });
 
-    const { data: category } = useSuspenseQuery({
+    const { data: category } = useQuery({
         queryKey: ['category', mission?.category],
         queryFn: () => getCategoryById(mission!.category),
+        enabled: !!mission?.category,
     });
 
-    const { data: host } = useSuspenseQuery({
+    const { data: host } = useQuery({
         queryKey: ['user', mission?.creator],
         queryFn: () => getUserById(mission!.creator),
-    });
-    const { data: participationData } = useSuspenseQuery({
-        queryKey: ['isParticipated', id, currentUser?.$id],
-        queryFn: () => isParticipated({ missionId: id!, userId: currentUser!.$id }),
+        enabled: !!mission?.creator,
     });
 
-    const isUserParticipated = participationData;
-    const joinMutation = useMutation({
-        mutationFn: () => createParticipation({
-            missionId: id!,
-            userId: currentUser!.$id,
-        }),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['mission', id] });
-            queryClient.invalidateQueries({ queryKey: ['isParticipated', id, currentUser?.$id] });
-        },
+    const { data: isUserParticipated } = useQuery({
+        queryKey: ['isParticipated', id, currentUser?.$id],
+        queryFn: () => isParticipated({ missionId: id!, userId: currentUser!.$id }),
+        enabled: !!id && !!currentUser?.$id,
     });
+
+    // Mutations
+    const joinMutation = useMutation({
+        mutationFn: async () => {
+            const res = await createParticipation({
+                missionId: id!,
+                userId: currentUser!.$id,
+            });
+            if (res) {
+                await updateMissionSpots(id!, (mission?.availableSpots || 1) - 1);
+            }
+            return res;
+        },
+        onMutate: async () => {
+            await queryClient.cancelQueries({ queryKey: ['isParticipated', id, currentUser?.$id] });
+            await queryClient.cancelQueries({ queryKey: ['mission', id] });
+
+            const previousParticipation = queryClient.getQueryData(['isParticipated', id, currentUser?.$id]);
+            const previousMission = queryClient.getQueryData(['mission', id]);
+
+            queryClient.setQueryData(['isParticipated', id, currentUser?.$id], true);
+            if (mission) {
+                queryClient.setQueryData(['mission', id], {
+                    ...mission,
+                    availableSpots: mission.availableSpots - 1,
+                });
+            }
+
+            return { previousParticipation, previousMission };
+        },
+        onError: (err, newParticipation, context) => {
+            queryClient.setQueryData(['isParticipated', id, currentUser?.$id], context?.previousParticipation);
+            queryClient.setQueryData(['mission', id], context?.previousMission);
+            toast.show('Error', { message: 'Failed to join mission', type: 'error' });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['mission', id] });
+            queryClient.invalidateQueries({ queryKey: ['userParticipations', currentUser?.$id] });
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        },
+        onSuccess: () => {
+            // Explicitly confirm optimistic value — don't rely on refetch
+            queryClient.setQueryData(['isParticipated', id, currentUser?.$id], true);
+            toast.show('Success', { message: 'You have joined the mission!', type: 'success' });
+        }
+    });
+
+    const cancelMutation = useMutation({
+        mutationFn: async () => {
+            const res = await cancelParticipation({
+                missionId: id!,
+                userId: currentUser!.$id,
+            });
+            if (res) {
+                // Also update available spots in DB
+                await updateMissionSpots(id!, (mission?.availableSpots || 0) + 1);
+            }
+            return res;
+        },
+        onMutate: async () => {
+            await queryClient.cancelQueries({ queryKey: ['isParticipated', id, currentUser?.$id] });
+            await queryClient.cancelQueries({ queryKey: ['mission', id] });
+
+            const previousParticipation = queryClient.getQueryData(['isParticipated', id, currentUser?.$id]);
+            const previousMission = queryClient.getQueryData(['mission', id]);
+
+            queryClient.setQueryData(['isParticipated', id, currentUser?.$id], false);
+            if (mission) {
+                queryClient.setQueryData(['mission', id], {
+                    ...mission,
+                    availableSpots: mission.availableSpots + 1,
+                });
+            }
+
+            return { previousParticipation, previousMission };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['isParticipated', id, currentUser?.$id], context?.previousParticipation);
+            queryClient.setQueryData(['mission', id], context?.previousMission);
+            toast.show('Error', { message: 'Failed to cancel participation', type: 'error' });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['mission', id] });
+            queryClient.invalidateQueries({ queryKey: ['userParticipations', currentUser?.$id] });
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        },
+        onSuccess: () => {
+            // Explicitly confirm optimistic value — don't rely on refetch
+            queryClient.setQueryData(['isParticipated', id, currentUser?.$id], false);
+            toast.show('Cancelled', { message: 'Participation cancelled', type: 'success' });
+        }
+    });
+
+    if (missionLoading || userLoading) {
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#2D6B4F" />
+            </View>
+        );
+    }
 
     if (!mission) return null;
 
     const startDate = new Date(mission.startDate);
     const dateString = startDate.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
+        month: 'short', day: 'numeric', year: 'numeric',
     });
     const timeString = `${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(mission.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
@@ -94,18 +189,18 @@ export default function MissionDetail() {
 
                         <View style={styles.headerContent}>
                             <View style={styles.categoryChip}>
-                                <Text style={styles.categoryText}>{category?.title}</Text>
+                                <Text style={styles.categoryText}>{category?.title || 'Eco Action'}</Text>
                             </View>
                             <Text style={styles.title}>{mission.name}</Text>
 
                             <View style={styles.hostRow}>
                                 <View style={styles.avatar}>
                                     <Text style={styles.avatarText}>
-                                        {host?.name.substring(0, 2).toUpperCase()}
+                                        {host?.name ? host.name.substring(0, 2).toUpperCase() : 'EA'}
                                     </Text>
                                 </View>
                                 <Text style={styles.hostText}>
-                                    Hosted by <Text style={styles.hostName}>{host?.name}</Text>
+                                    Hosted by <Text style={styles.hostName}>{host?.name || 'EcoAction Team'}</Text>
                                 </Text>
                             </View>
                         </View>
@@ -150,19 +245,40 @@ export default function MissionDetail() {
             </ScrollView>
 
             {/* Sticky Footer Button */}
-            {mission.availableSpots > 0 && !isUserParticipated && mission.creator !== currentUser?.$id && (
-                <View style={styles.footer}>
+            <View style={styles.footer}>
+                {mission.creator === currentUser?.$id ? (
+                    <View style={styles.ownerNotice}>
+                        <MaterialCommunityIcons name="information-outline" size={20} color="#059669" />
+                        <Text style={styles.ownerNoticeText}>You are the organizer of this mission</Text>
+                    </View>
+                ) : isUserParticipated ? (
                     <TouchableOpacity
-                        style={styles.joinButton}
+                        style={[styles.actionButton, styles.cancelButton]}
+                        onPress={() => cancelMutation.mutate()}
+                        disabled={cancelMutation.isPending}
+                    >
+                        <Text style={styles.actionButtonText}>
+                            {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Participation'}
+                        </Text>
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        style={[
+                            styles.actionButton,
+                            styles.joinButton,
+                            mission.availableSpots === 0 && styles.disabledButton
+                        ]}
                         onPress={() => joinMutation.mutate()}
                         disabled={joinMutation.isPending || mission.availableSpots === 0}
                     >
-                        <Text style={styles.joinButtonText}>
-                            {joinMutation.isPending ? 'Joining...' : 'Join Mission'}
+                        <Text style={styles.actionButtonText}>
+                            {mission.availableSpots === 0
+                                ? 'Mission Full'
+                                : joinMutation.isPending ? 'Joining...' : 'Join Mission'}
                         </Text>
                     </TouchableOpacity>
-                </View>
-            )}
+                )}
+            </View>
         </View>
     );
 }
@@ -172,8 +288,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FDFCE7',
+    },
     scrollContent: {
-        paddingBottom: 100,
+        paddingBottom: 120,
     },
     headerGradient: {
         height: 350,
@@ -315,21 +437,44 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#F3F4F6',
     },
-    joinButton: {
-        backgroundColor: '#2D6B4F',
+    actionButton: {
         height: 60,
         borderRadius: 30,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#2D6B4F',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.2,
         shadowRadius: 15,
         elevation: 10,
     },
-    joinButtonText: {
+    joinButton: {
+        backgroundColor: '#2D6B4F',
+        shadowColor: '#2D6B4F',
+    },
+    cancelButton: {
+        backgroundColor: '#EF4444',
+        shadowColor: '#EF4444',
+    },
+    disabledButton: {
+        backgroundColor: '#9CA3AF',
+        shadowColor: '#9CA3AF',
+    },
+    actionButtonText: {
         color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+    },
+    ownerNotice: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#DCFCE7',
+        padding: 15,
+        borderRadius: 15,
+    },
+    ownerNoticeText: {
+        color: '#065F46',
+        fontWeight: '600',
+        marginLeft: 8,
     },
 });

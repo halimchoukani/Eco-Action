@@ -14,7 +14,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { register, getCurrentUser } from '../../lib/api/users';
-import { useToastController } from '@tamagui/toast';
+import { useToastController } from 'tamagui';
 
 export default function RegisterScreen() {
     const router = useRouter();

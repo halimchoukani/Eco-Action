@@ -13,11 +13,44 @@ export const getMissions = async () => {
         ]
     )
 }
+
 export const getMissionById = async (missionId: string) => {
     return await databases.getDocument<Mission>(
         appwriteConfig.databaseId,
         appwriteConfig.missionsCollectionId,
         missionId
+    )
+}
+
+export const getMissionsByCategory = async (categoryId: string) => {
+    return await databases.listDocuments<Mission>(
+        appwriteConfig.databaseId,
+        appwriteConfig.missionsCollectionId,
+        [
+            Query.equal('category', categoryId),
+            Query.orderAsc("$createdAt"),
+        ]
+    )
+}
+
+export const searchMissions = async (searchQuery: string) => {
+    return await databases.listDocuments<Mission>(
+        appwriteConfig.databaseId,
+        appwriteConfig.missionsCollectionId,
+        [
+            Query.search('name', searchQuery),
+        ]
+    )
+}
+
+export const getMissionsByIds = async (missionIds: string[]) => {
+    if (missionIds.length === 0) return { documents: [], total: 0 };
+    return await databases.listDocuments<Mission>(
+        appwriteConfig.databaseId,
+        appwriteConfig.missionsCollectionId,
+        [
+            Query.equal('$id', missionIds),
+        ]
     )
 }
 
@@ -42,4 +75,13 @@ export const createMission = async (mission: Mission) => {
         }
     }
     return null
+}
+
+export const updateMissionSpots = async (missionId: string, availableSpots: number) => {
+    return await databases.updateDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.missionsCollectionId,
+        missionId,
+        { availableSpots }
+    )
 }

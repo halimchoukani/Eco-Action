@@ -6,11 +6,12 @@ import {
     ScrollView,
     TouchableOpacity,
     Dimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getCurrentUser } from '../../lib/api/users';
 
 import StatsCard from '../../components/StatsCard';
@@ -25,10 +26,19 @@ export default function Home() {
         queryFn: getCurrentUser,
     });
     const userName = user?.name?.split(' ')[0] || 'Member';
-    const { data: missions, isLoading: missionsLoading } = useSuspenseQuery({
+    const { data: missions, isLoading: missionsLoading } = useQuery({
         queryKey: ['missions'],
         queryFn: getMissions,
     });
+
+    if (missionsLoading || userLoading) {
+        return (
+            <SafeAreaView style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#2D6B4F" />
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -110,6 +120,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 30,
         paddingTop: 10,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FDFCE7',
     },
     header: {
         flexDirection: 'row',

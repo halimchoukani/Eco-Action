@@ -5,4 +5,5 @@ export interface User extends Models.Document {
     email: string;
     impactScore: number;
     hoursVolunteered: number;
+    participation?: any[]; // For nested relationship fallbacks
 }

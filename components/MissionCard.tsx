@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -8,7 +8,7 @@ import { Mission } from "~/lib/types/mission";
 
 export default function MissionCard({ mission }: { mission: Mission }) {
     const router = useRouter();
-    const { data: category, isLoading: categoryLoading } = useSuspenseQuery({
+    const { data: category, isLoading: categoryLoading } = useQuery({
         queryKey: ['category', mission.category],
         queryFn: () => getCategoryById(mission.category),
     });

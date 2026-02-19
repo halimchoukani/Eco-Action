@@ -12,7 +12,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { config } from '../tamagui.config'
 import { CurrentToast } from '../components/CurrentToast'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
+        },
+    },
+})
 
 export default function RootLayout() {
     const colorScheme = useColorScheme()
