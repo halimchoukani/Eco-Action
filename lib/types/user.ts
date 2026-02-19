@@ -1,7 +1,6 @@
-export interface User {
-    $id: string;
-    $createdAt: string;
-    $updatedAt: string;
+import { Models } from "appwrite";
+
+export interface User extends Models.Document {
     name: string;
     email: string;
     impactScore: number;

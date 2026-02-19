@@ -10,20 +10,25 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getCurrentUser } from '../../lib/api/users';
 
 import StatsCard from '../../components/StatsCard';
+import MissionCard from '~/components/MissionCard';
+import { getMissions } from '~/lib/api/mission';
 
 const { width } = Dimensions.get('window');
 
 export default function Home() {
-    const { data: user, isLoading } = useQuery({
+    const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['currentUser'],
         queryFn: getCurrentUser,
     });
     const userName = user?.name?.split(' ')[0] || 'Member';
-
+    const { data: missions, isLoading: missionsLoading } = useSuspenseQuery({
+        queryKey: ['missions'],
+        queryFn: getMissions,
+    });
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -64,48 +69,7 @@ export default function Home() {
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Your Next Mission</Text>
                 </View>
-                <TouchableOpacity activeOpacity={0.9} style={styles.mainCard}>
-                    <LinearGradient
-                        colors={['#60A5FA', '#34D399']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.cardImagePlaceholder}
-                    >
-                        <View style={styles.cardChips}>
-                            <View style={styles.chip}>
-                                <Text style={styles.chipText}>Beach Cleanup</Text>
-                            </View>
-                            <View style={[styles.chip, { backgroundColor: '#DCFCE7' }]}>
-                                <Text style={[styles.chipText, { color: '#059669' }]}>Easy</Text>
-                            </View>
-                        </View>
-                    </LinearGradient>
-                    <View style={styles.cardContent}>
-                        <Text style={styles.cardTitle}>Sunset Beach Cleanup</Text>
-                        <View style={styles.cardInfoRow}>
-                            <View style={styles.cardInfoItem}>
-                                <MaterialCommunityIcons name="map-marker-outline" size={16} color="#9CA3AF" />
-                                <Text style={styles.cardInfoText}>Crystal Cove State</Text>
-                            </View>
-                            <View style={styles.cardInfoItem}>
-                                <MaterialCommunityIcons name="calendar-outline" size={16} color="#9CA3AF" />
-                                <Text style={styles.cardInfoText}>Oct 12, 2024</Text>
-                            </View>
-                        </View>
-                        <View style={styles.progressContainer}>
-                            <View style={styles.progressHeader}>
-                                <View style={styles.progressLabel}>
-                                    <MaterialCommunityIcons name="account-group-outline" size={16} color="#4B5563" />
-                                    <Text style={styles.progressText}>4 spots left</Text>
-                                </View>
-                                <Text style={styles.percentageText}>80 % full</Text>
-                            </View>
-                            <View style={styles.progressBarBg}>
-                                <View style={[styles.progressBarFill, { width: '80%' }]} />
-                            </View>
-                        </View>
-                    </View>
-                </TouchableOpacity>
+                {missions?.documents[0] && <MissionCard mission={missions.documents[0]} />}
 
                 {/* Featured Opportunities */}
                 <View style={styles.sectionHeader}>
@@ -115,58 +79,9 @@ export default function Home() {
                     </TouchableOpacity>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                    <TouchableOpacity activeOpacity={0.9} style={styles.smallCard}>
-                        <LinearGradient
-                            colors={['#60A5FA', '#34D399']}
-                            style={styles.smallCardImage}
-                        >
-                            <View style={styles.smallCardChips}>
-                                <View style={styles.smallChip}>
-                                    <Text style={styles.smallChipText}>Beach Cleanup</Text>
-                                </View>
-                                <View style={[styles.smallChip, { backgroundColor: '#DCFCE7' }]}>
-                                    <Text style={[styles.smallChipText, { color: '#059669' }]}>Easy</Text>
-                                </View>
-                            </View>
-                        </LinearGradient>
-                        <View style={styles.smallCardContent}>
-                            <Text style={styles.smallCardTitle}>Sunset Beach Cleanup</Text>
-                            <View style={styles.smallCardInfoItem}>
-                                <MaterialCommunityIcons name="map-marker-outline" size={14} color="#9CA3AF" />
-                                <Text style={styles.smallCardInfoText}>Crystal Cove State</Text>
-                            </View>
-                            <View style={styles.smallCardProgress}>
-                                <View style={styles.progressBarBg}>
-                                    <View style={[styles.progressBarFill, { width: '80%' }]} />
-                                </View>
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity activeOpacity={0.9} style={styles.smallCard}>
-                        <LinearGradient
-                            colors={['#10B981', '#34D399']}
-                            style={styles.smallCardImage}
-                        >
-                            <View style={styles.smallCardChips}>
-                                <View style={styles.smallChip}>
-                                    <Text style={styles.smallChipText}>Tree Planting</Text>
-                                </View>
-                            </View>
-                        </LinearGradient>
-                        <View style={styles.smallCardContent}>
-                            <Text style={styles.smallCardTitle}>Urban Tree Plant</Text>
-                            <View style={styles.smallCardInfoItem}>
-                                <MaterialCommunityIcons name="map-marker-outline" size={14} color="#9CA3AF" />
-                                <Text style={styles.smallCardInfoText}>Downtown City P</Text>
-                            </View>
-                            <View style={styles.smallCardProgress}>
-                                <View style={styles.progressBarBg}>
-                                    <View style={[styles.progressBarFill, { width: '40%', backgroundColor: '#10B981' }]} />
-                                </View>
-                            </View>
-                        </View>
-                    </TouchableOpacity>
+                    {missions?.documents.filter(m => m.isFeatured).map((mission) => (
+                        <MissionCard key={mission.$id} mission={mission} />
+                    ))}
                 </ScrollView>
 
                 {/* Did you know section */}
@@ -350,6 +265,7 @@ const styles = StyleSheet.create({
     horizontalScroll: {
         paddingRight: 20,
         marginBottom: 30,
+        gap: 20,
     },
     smallCard: {
         width: 260,

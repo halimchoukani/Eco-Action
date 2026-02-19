@@ -1,5 +1,5 @@
-import { ID } from "appwrite";
-import { account, databases } from "../appwrite"
+import { ID, Query } from "appwrite";
+import { account, appwriteConfig, databases } from "../appwrite"
 import { User } from "../types/user";
 
 export const login = async (email: string, password: string) => {
@@ -18,26 +18,24 @@ export const register = async (name: string, email: string, password: string) =>
         if (user) {
             return false;
         }
-        const newUser: User = {
-            $id: ID.unique(),
-            $createdAt: new Date().toISOString(),
-            $updatedAt: new Date().toISOString(),
+        const userId = ID.unique();
+        const userData = {
             name,
             email,
             impactScore: 0,
             hoursVolunteered: 0,
         }
         await account.create(
-            newUser.$id,
-            newUser.email,
+            userId,
+            email,
             password,
-            newUser.name
+            name
         )
         await databases.createDocument(
-            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            appwriteConfig.databaseId,
             "user",
-            newUser.$id,
-            newUser
+            userId,
+            userData
         )
         return true;
     } catch (error) {
@@ -56,8 +54,8 @@ export const getCurrentUser = async () => {
             return null;
         }
         console.log("User found in appwrite", user);
-        const userData = await databases.getDocument(
-            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+        const userData = await databases.getDocument<User>(
+            appwriteConfig.databaseId,
             "user",
             user.$id
         )
@@ -67,6 +65,19 @@ export const getCurrentUser = async () => {
         if (error?.code !== 401) {
             console.log("Error in getCurrentUser:", error);
         }
+        return null;
+    }
+}
+
+export const getUserById = async (userId: string) => {
+    try {
+        return await databases.getDocument<User>(
+            appwriteConfig.databaseId,
+            "user",
+            userId
+        )
+    } catch (error) {
+        console.log("Error in getUserById:", error);
         return null;
     }
 }

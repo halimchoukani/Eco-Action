@@ -5,6 +5,9 @@ export const appwriteConfig = {
     endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT ?? "https://cloud.appwrite.io/v1",
     projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID ?? "",
     databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID ?? "",
+    missionsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_MISSIONS_COLLECTION_ID ?? "",
+    participationsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_PARTICIPATIONS_COLLECTION_ID ?? "",
+    categoriesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_CATEGORIES_COLLECTION_ID ?? "",
 };
 
 const client = new Client()
