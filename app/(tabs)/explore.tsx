@@ -9,19 +9,18 @@ import MissionCard from '../../components/MissionCard';
 
 export default function ExploreScreen() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
 
     const { data: categories, isLoading: categoriesLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: getCategories,
     });
 
-    const { data: missionsData, isLoading: missionsLoading } = useQuery({
-        queryKey: ['missions', selectedCategory, searchQuery],
+    const { data: missionsData, isLoading: missionsLoading, error } = useQuery({
+        queryKey: ['missions', selectedCategory, debouncedQuery],
         queryFn: () => {
-            if (searchQuery) {
-                return searchMissions(searchQuery);
-            }
             if (selectedCategory) {
                 return getMissionsByCategory(selectedCategory);
             }
@@ -30,7 +29,7 @@ export default function ExploreScreen() {
     });
 
     const missions = missionsData?.documents || [];
-
+    const filteredMissions = missions.filter((mission) => mission.name.toLowerCase().includes(searchQuery.toLowerCase()));
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -99,7 +98,7 @@ export default function ExploreScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={missions}
+                    data={filteredMissions}
                     keyExtractor={(item) => item.$id}
                     renderItem={({ item }) => (
                         <View style={styles.cardWrapper}>

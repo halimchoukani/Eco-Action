@@ -34,11 +34,13 @@ export const getMissionsByCategory = async (categoryId: string) => {
 }
 
 export const searchMissions = async (searchQuery: string) => {
+    searchQuery = searchQuery.toLowerCase();
     return await databases.listDocuments<Mission>(
         appwriteConfig.databaseId,
         appwriteConfig.missionsCollectionId,
         [
             Query.search('name', searchQuery),
+            Query.search('description', searchQuery),
         ]
     )
 }
