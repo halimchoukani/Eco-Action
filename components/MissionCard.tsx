@@ -51,10 +51,10 @@ export default function MissionCard({ mission }: { mission: Mission }) {
                             <MaterialCommunityIcons name="account-group-outline" size={16} color="#4B5563" />
                             <Text style={styles.progressText}>{mission.availableSpots} spots left</Text>
                         </View>
-                        <Text style={styles.percentageText}>{Math.round((mission.availableSpots / mission.totalSpots) * 100)} % full</Text>
+                        <Text style={styles.percentageText}>{Math.round(((mission.totalSpots - mission.availableSpots) / mission.totalSpots) * 100)} % full</Text>
                     </View>
                     <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${(mission.availableSpots / mission.totalSpots) * 100}%` }]} />
+                        <View style={[styles.progressBarFill, { width: `${((mission.totalSpots - mission.availableSpots) / mission.totalSpots) * 100}%` }]} />
                     </View>
                 </View>
             </View>

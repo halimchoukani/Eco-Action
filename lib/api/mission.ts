@@ -43,6 +43,16 @@ export const searchMissions = async (searchQuery: string) => {
     )
 }
 
+export const getMissionsByCreator = async (creatorId: string) => {
+    return await databases.listDocuments<Mission>(
+        appwriteConfig.databaseId,
+        appwriteConfig.missionsCollectionId,
+        [
+            Query.equal('creator', creatorId),
+            Query.orderDesc("$createdAt"), // Show newest first
+        ]
+    )
+}
 export const getMissionsByIds = async (missionIds: string[]) => {
     if (missionIds.length === 0) return { documents: [], total: 0 };
     return await databases.listDocuments<Mission>(
