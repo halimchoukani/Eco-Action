@@ -60,8 +60,19 @@ export default function MissionsScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>My Missions</Text>
-                <Text style={styles.subtitle}>Track your ongoing and completed eco-actions.</Text>
+                <View style={styles.headerRow}>
+                    <View>
+                        <Text style={styles.title}>My Missions</Text>
+                        <Text style={styles.subtitle}>Track your ongoing and completed eco-actions.</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => router.push('/mission/add')}
+                        activeOpacity={0.85}
+                    >
+                        <MaterialCommunityIcons name="plus" size={26} color="#fff" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {isLoading ? (
@@ -111,16 +122,34 @@ const styles = StyleSheet.create({
         paddingTop: 10,
         marginBottom: 20,
     },
+    headerRow: {
+        flexDirection: 'row' as const,
+        justifyContent: 'space-between' as const,
+        alignItems: 'center' as const,
+    },
+    addButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#2D6B4F',
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
+        shadowColor: '#2D6B4F',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        elevation: 6,
+    },
     title: {
         fontSize: 28,
-        fontWeight: 'bold',
+        fontWeight: 'bold' as const,
         color: '#064E3B',
     },
     subtitle: {
         fontSize: 16,
         color: '#059669',
         marginTop: 5,
-        fontWeight: '500',
+        fontWeight: '500' as const,
     },
     loaderContainer: {
         flex: 1,

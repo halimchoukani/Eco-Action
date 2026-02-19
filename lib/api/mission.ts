@@ -1,6 +1,6 @@
 import { ID, Query } from "appwrite";
 import { appwriteConfig, databases } from "../appwrite"
-import { Mission } from "../types/mission";
+import { CreateMissionPayload, Mission } from "../types/mission";
 import { createParticipation } from "./participation";
 
 
@@ -54,7 +54,7 @@ export const getMissionsByIds = async (missionIds: string[]) => {
     )
 }
 
-export const createMission = async (mission: Mission) => {
+export const createMission = async (mission: CreateMissionPayload) => {
     const missionId = ID.unique()
     const missionData = await databases.createDocument(
         appwriteConfig.databaseId,

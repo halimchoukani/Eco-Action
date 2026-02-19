@@ -1,14 +1,13 @@
 import { Models } from "appwrite";
 
 export enum MissionDifficulty {
-    EASY = "easy",
-    MEDIUM = "medium",
-    HARD = "hard",
+    EASY = "Easy",
+    MEDIUM = "Medium",
+    HARD = "Hard",
 }
 
 export interface Mission extends Models.Document {
     name: string;
-    type: string;
     description: string;
     avgRate: number;
     isFeatured: boolean;
@@ -23,3 +22,5 @@ export interface Mission extends Models.Document {
     difficulty: MissionDifficulty;
     creator: string;
 }
+
+export type CreateMissionPayload = Omit<Mission, keyof Models.Document>;

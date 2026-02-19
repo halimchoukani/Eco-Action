@@ -57,6 +57,10 @@ export default function RootLayout() {
                                 <Stack.Screen
                                     name="auth/register"
                                 />
+                                <Stack.Screen
+                                    name="mission/add"
+                                    options={{ title: 'Create Mission' }}
+                                />
                             </Stack>
                             <ToastViewport top={50} left={20} right={20} />
                         </ToastProvider>
